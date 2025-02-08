@@ -1,4 +1,23 @@
 // AudioRenderer.jsx
+const baseNotes = {
+  0: 130.81,  // C3
+  1: 138.59,  // C#3
+  2: 146.83,  // D3
+  3: 155.56,  // D#3
+  4: 164.81,  // E3
+  5: 174.61,  // F3
+  6: 185.00,  // F#3
+  7: 196.00,  // G3
+  8: 207.65,  // G#3
+  9: 220.00,  // A3
+  10: 233.08, // A#3
+  11: 246.94, // B3
+  12: 261.63, // C4
+  13: 277.18, // C#4
+  14: 293.66, // D4
+  15: 311.13  // D#4
+};
+
 class AudioRenderer {
     constructor(audioContext, synthesizer) {
       if (!audioContext || !synthesizer) {
@@ -102,46 +121,42 @@ class AudioRenderer {
               // Handle arpeggiator patterns
               if (pattern.arpeggiatorState && pattern.arpeggiatorState.pattern[step]) {
                 try {
-                  this.synthesizer.context = offlineCtx;
-                  // Create oscillator for arpeggiator note
+                  const stepDuration = (60 / pattern.tempo) / 4;
+                  const noteDuration = stepDuration * pattern.arpeggiatorState.noteLength;
+                  
+                  // Create the same nodes as ArpeggiatorSynth
                   const oscillator = offlineCtx.createOscillator();
                   const gainNode = offlineCtx.createGain();
                   const filter = offlineCtx.createBiquadFilter();
                   const delay = offlineCtx.createDelay();
                   const feedbackGain = offlineCtx.createGain();
-                  
-                  // Configure oscillator
-                  oscillator.type = pattern.arpeggiatorState.waveform;
-                  const baseNote = pattern.arpeggiatorState.pattern[step];
-                  const frequency = typeof baseNote === 'number' ? baseNote : 440;
-                  oscillator.frequency.setValueAtTime(
-                    frequency * Math.pow(2, pattern.arpeggiatorState.octaveShift),
-                    actualTime
-                  );
 
-                  // Configure gain envelope
-                  const noteLength = pattern.arpeggiatorState.noteLength * (stepTime);
-                  gainNode.gain.setValueAtTime(0.3, actualTime);
-                  gainNode.gain.exponentialRampToValueAtTime(0.001, actualTime + noteLength);
+                  // Configure nodes exactly as ArpeggiatorSynth does
+                  oscillator.type = pattern.arpeggiatorState.waveform;
+                  
+                  // Calculate frequency with octave shift
+                  const baseNote = pattern.arpeggiatorState.pattern[step];
+                  const baseFreq = baseNotes[baseNote];
+                  const shiftedFreq = baseFreq * Math.pow(2, pattern.arpeggiatorState.octaveShift);
+                  oscillator.frequency.setValueAtTime(shiftedFreq, actualTime);
 
                   // Configure filter
                   filter.type = 'lowpass';
-                  filter.frequency.setValueAtTime(pattern.arpeggiatorState.cutoff, actualTime);
-                  filter.Q.setValueAtTime(pattern.arpeggiatorState.resonance, actualTime);
+                  filter.frequency.value = pattern.arpeggiatorState.cutoff;
+                  filter.Q.value = pattern.arpeggiatorState.resonance;
 
                   // Configure delay
-                  delay.delayTime.setValueAtTime(
-                    pattern.arpeggiatorState.delayAmount * (60 / pattern.tempo),
-                    actualTime
-                  );
-                  feedbackGain.gain.setValueAtTime(pattern.arpeggiatorState.feedback, actualTime);
+                  delay.delayTime.value = pattern.arpeggiatorState.delayAmount;
+                  feedbackGain.gain.value = pattern.arpeggiatorState.feedback;
 
-                  // Connect everything
+                  // Set envelope
+                  gainNode.gain.setValueAtTime(0.7, actualTime);
+                  gainNode.gain.exponentialRampToValueAtTime(0.001, actualTime + noteDuration);
+
+                  // Connect nodes
                   oscillator.connect(filter);
                   filter.connect(gainNode);
                   gainNode.connect(offlineCtx.destination);
-                  
-                  // Delay chain
                   gainNode.connect(delay);
                   delay.connect(feedbackGain);
                   feedbackGain.connect(delay);
@@ -149,9 +164,10 @@ class AudioRenderer {
 
                   // Schedule playback
                   oscillator.start(actualTime);
-                  oscillator.stop(actualTime + noteLength + (pattern.arpeggiatorState.delayAmount * 2));
-                } finally {
-                  this.synthesizer.context = originalContext;
+                  oscillator.stop(actualTime + noteDuration);
+
+                } catch (error) {
+                  console.error('Error rendering arpeggiator:', error);
                 }
               }
             }

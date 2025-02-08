@@ -672,11 +672,9 @@ useEffect(() => {
     <div className="bg-gray-200 p-4 border-2 border-t-white border-l-white border-b-pink-500 border-r-pink-500 max-w-4xl mx-auto font-mono">
       {/* Title Bar */}
       <div className="bg-blue-800 text-white px-2 py-1 flex justify-between items-center mb-4">
-        <span className="font-bold">Professor Beat PhD</span>
+        <span className="font-bold">Mr. Music Groovebox</span>
         <div className="flex">
-          <button className="px-2 border border-white hover:bg-blue-700 active:bg-blue-900">_</button>
-          <button className="px-2 border border-white hover:bg-blue-700 active:bg-blue-900">□</button>
-          <button className="px-2 border border-white hover:bg-blue-700 active:bg-blue-900">×</button>
+          
         </div>
       </div>
       <div className="mb-4">
