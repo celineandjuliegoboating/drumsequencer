@@ -253,6 +253,34 @@ const ParameterKnob = memo(({ value, onChange, label }) => {
     setIsDragging(false);
   }, []);
 
+  // touch handlers
+const handleTouchStart = useCallback((e) => {
+  e.preventDefault();
+  setIsDragging(true);
+  startPos.current = e.touches[0].clientY;
+  startValue.current = value;
+}, [value]);
+
+const handleTouchMove = useCallback((e) => {
+  if (!isDragging) return;
+  e.preventDefault();
+  
+  const delta = startPos.current - e.touches[0].clientY;
+  const sensitivity = 2;
+  const valueRange = range.max - range.min;
+  const scaleFactor = valueRange / (100 / sensitivity);
+  
+  const newValue = Math.min(
+    range.max,
+    Math.max(
+      range.min,
+      startValue.current + (delta * scaleFactor)
+    )
+  );
+  
+  onChange(Number(newValue.toFixed(2)));
+}, [isDragging, onChange, range]);
+
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
@@ -271,6 +299,10 @@ const ParameterKnob = memo(({ value, onChange, label }) => {
       <div 
         ref={knobRef}
         onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}  
+        onTouchMove={handleTouchMove}    
+        onTouchEnd={() => setIsDragging(false)}  
+        
         className="w-8 h-8 rounded-full bg-gray-200 border-2 border-t-white border-l-white border-b-pink-500 border-r-pink-500 relative cursor-pointer"
       >
         <div 
@@ -669,7 +701,7 @@ useEffect(() => {
   }, []);
 
   return (
-    <div className="bg-gray-200 p-4 border-2 border-t-white border-l-white border-b-pink-500 border-r-pink-500 max-w-4xl mx-auto font-mono">
+    <div className="bg-gray-200 p-2 sm:p-4 border-2 border-t-white border-l-white border-b-pink-500 border-r-pink-500 max-w-4xl mx-auto font-mono overflow-x-hidden">
       {/* Title Bar */}
       <div className="bg-blue-800 text-white px-2 py-1 flex justify-between items-center mb-4">
         <span className="font-bold">Mr. Music Groovebox</span>
@@ -705,9 +737,9 @@ useEffect(() => {
         </div>
 
       {/* Controls Panel */}
-<div className="flex p-4 border-2 border-t-pink-500 border-l-pink-500 border-b-white border-r-white mb-4">
+      <div className="flex flex-col sm:flex-row p-2 sm:p-4 border-2 border-t-pink-500 border-l-pink-500 border-b-white border-r-white mb-4">
   {/* Tempo and Swing Controls */}
-  <div className="flex-1">
+  <div className="flex-1 mb-4 sm:mb-0">
     <div className="flex items-center mb-4">
       <span className="mr-2 w-16">Tempo:</span>
       <div className="flex-grow mx-4">
@@ -799,15 +831,15 @@ useEffect(() => {
       
 
      {/* Sequencer Grid - Modified for better layout */}
-     <div className="p-4 border-2 border-t-pink-500 border-l-pink-500 border-b-white border-r-white mb-4">
-        <div className="space-y-2">
+     <div className="p-2 sm:p-4 border-2 border-t-pink-500 border-l-pink-500 border-b-white border-r-white mb-4 overflow-x-auto">
+        <div className="space-y-2 min-w-min">
           {Object.keys(sequence).map(sound => (
-            <div key={sound} className="grid grid-cols-[80px_300px_1fr] items-center gap-2">
-              {/* Sound name */}
-              <div className="text-left text-sm">{sound}</div>
+            <div key={sound} className="flex flex-col sm:grid sm:grid-cols-[80px_300px_1fr] sm:items-center gap-2">
+              {/* Sound name - Full width on mobile */}
+              <div className="text-left text-sm font-bold">{sound}</div>
 
-              {/* Parameters section */}
-              <div className="flex gap-4 justify-start pl-4">
+              {/* Parameters section - Full width container on mobile */}
+              <div className="flex flex-wrap gap-4 justify-start pl-4 mb-2 sm:mb-0">
                 {Object.entries(drumParams[sound]).map(([param, value]) => (
                   <ParameterKnob
                     key={`${sound}-${param}`}
@@ -818,22 +850,23 @@ useEffect(() => {
                 ))}
               </div>
 
-              {/* Step sequencer buttons */}
-              <div className="flex gap-0.5">
+              {/* Step sequencer buttons - Full width on mobile */}
+              <div className="flex gap-0.5 pl-4 sm:pl-0">
                 {Array(16).fill(null).map((_, index) => (
                   <button
                     key={index}
                     onClick={() => toggleStep(sound, index)}
                     className={`
-                      w-6 h-6
+                      w-8 h-8 sm:w-6 sm:h-6
                       bg-gray-200
                       border-2
                       ${sequence[sound][index] 
                         ? 'border-t-pink-500 border-l-pink-500 border-b-white border-r-white' 
                         : 'border-t-white border-l-white border-b-pink-500 border-r-pink-500'}
+                      relative
                     `}
                   >
-                    <div className={`w-full h-full 
+                    <div className={`w-full h-full flex items-center justify-center
                       ${sequence[sound][index] ? 'bg-blue-600' : ''} 
                       ${activeStep === index ? 'border border-dotted border-black' : ''}`} 
                     />
@@ -842,6 +875,7 @@ useEffect(() => {
               </div>
             </div>
           ))}
+
 
           {/* Synth Track */}
           <div className="mt-4 pt-4 border-t-2 border-gray-400">

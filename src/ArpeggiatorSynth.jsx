@@ -30,44 +30,73 @@ const noteNames = {
 
 const EffectKnob = ({ value, onChange, label, min, max, step }) => {
   const knobRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const startPos = useRef(0);
+  const startValue = useRef(0);
   
   const rotation = useMemo(() => {
     const percentage = (value - min) / (max - min);
-    return percentage * 270 - 135; 
+    return percentage * 270 - 135;
   }, [value, min, max]);
+
+  const handleStart = useCallback((clientY) => {
+    setIsDragging(true);
+    startPos.current = clientY;
+    startValue.current = value;
+  }, [value]);
+
+  const handleMove = useCallback((clientY) => {
+    if (!isDragging) return;
+    
+    const delta = startPos.current - clientY;
+    const sensitivity = 2;
+    const valueRange = max - min;
+    const scaleFactor = valueRange / (100 / sensitivity);
+    
+    const newValue = Math.min(
+      max,
+      Math.max(
+        min,
+        startValue.current + (delta * scaleFactor)
+      )
+    );
+    
+    onChange(Math.round(newValue / step) * step);
+  }, [isDragging, onChange, max, min, step]);
+
+  const handleEnd = useCallback(() => {
+    setIsDragging(false);
+  }, []);
 
   const handleMouseDown = useCallback((e) => {
     e.preventDefault();
-    const knob = knobRef.current;
-    const knobRect = knob.getBoundingClientRect();
-    const knobCenter = {
-      x: knobRect.left + knobRect.width / 2,
-      y: knobRect.top + knobRect.height / 2
-    };
-    
-    const handleMouseMove = (e) => {
-      const deltaY = -(e.clientY - knobCenter.y);
-      const deltaX = e.clientX - knobCenter.x;
-      const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
+    handleStart(e.clientY);
+  }, [handleStart]);
+
+  const handleTouchStart = useCallback((e) => {
+    e.preventDefault();
+    handleStart(e.touches[0].clientY);
+  }, [handleStart]);
+
+  const handleTouchMove = useCallback((e) => {
+    e.preventDefault();
+    handleMove(e.touches[0].clientY);
+  }, [handleMove]);
+
+  useEffect(() => {
+    if (isDragging) {
+      const handleMouseMove = (e) => handleMove(e.clientY);
+      const handleMouseUp = () => handleEnd();
       
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
       
-      let normalizedAngle = angle + 135; 
-      if (normalizedAngle < 0) normalizedAngle += 360;
-      if (normalizedAngle > 270) normalizedAngle = 270;
-      
-      const percentage = normalizedAngle / 270;
-      const newValue = min + percentage * (max - min);
-      onChange(Math.min(max, Math.max(min, Math.round(newValue / step) * step)));
-    };
-    
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-    
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }, [min, max, step, onChange]);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, handleMove, handleEnd]);
 
   return (
     <div className="flex flex-col items-center">
@@ -75,10 +104,14 @@ const EffectKnob = ({ value, onChange, label, min, max, step }) => {
       <div
         ref={knobRef}
         onMouseDown={handleMouseDown}
-        className="w-8 h-8 rounded-full bg-gray-200 border-2 border-t-white border-l-white border-b-pink-500 border-r-pink-500 relative cursor-pointer"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleEnd}
+        onTouchCancel={handleEnd}
+        className="w-12 h-12 md:w-8 md:h-8 rounded-full bg-gray-200 border-2 border-t-white border-l-white border-b-pink-500 border-r-pink-500 relative cursor-pointer touch-none"
       >
         <div
-          className="absolute w-1 h-3 bg-black top-1"
+          className="absolute w-1 h-4 md:h-3 bg-black top-1"
           style={{
             left: '50%',
             transformOrigin: 'bottom',

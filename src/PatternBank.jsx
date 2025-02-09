@@ -17,12 +17,12 @@ const PatternBank = ({
   return (
     <div className="bg-gray-200 p-4 border-2 border-t-pink-500 border-l-pink-500 border-b-white border-r-white">
       <div className="flex justify-between items-center mb-4">
-      <h2 className="text-sm font-bold">
-  Pattern Bank ({patterns.filter(p => p !== undefined).length}/{MAX_PATTERNS})
-</h2>
+        <h2 className="text-sm font-bold">
+          Pattern Bank ({patterns.filter(p => p !== undefined).length}/{MAX_PATTERNS})
+        </h2>
       </div>
 
-      <div className="grid grid-cols-4 gap-2">
+      <div className="flex sm:grid sm:grid-cols-4 gap-2 overflow-x-auto sm:overflow-x-visible pb-4 sm:pb-0">
         {Array(MAX_PATTERNS).fill(undefined).map((_, index) => {
           const pattern = patterns[index];
           const isSelected = selectedPattern === pattern?.id;
@@ -31,7 +31,7 @@ const PatternBank = ({
           return (
             <div
               key={index}
-              className={`p-2 border-2 ${pattern ? 'cursor-pointer' : 'bg-gray-100'} 
+              className={`flex-shrink-0 p-2 border-2 ${pattern ? 'cursor-pointer' : 'bg-gray-100'} 
                 ${isSelected 
                   ? 'border-t-pink-500 border-l-pink-500 border-b-white border-r-white' 
                   : 'border-t-white border-l-white border-b-pink-500 border-r-pink-500'
@@ -60,51 +60,51 @@ const PatternBank = ({
                   </div>
 
                   <div className="flex justify-between gap-1">
-  <button 
-    className={`w-8 h-8 flex items-center justify-center
-      border-2 ${isPlaying 
-        ? 'border-t-pink-500 border-l-pink-500 border-b-white border-r-white' 
-        : 'border-t-white border-l-white border-b-pink-500 border-r-pink-500'
-      }`}
-    onClick={() => isPlaying ? onStopPattern() : onPlayPattern(pattern)}
-  >
-    {isPlaying ? <StopCircle size={14} /> : <Play size={14} />}
-  </button>
+                    <button 
+                      className={`w-8 h-8 flex items-center justify-center
+                        border-2 ${isPlaying 
+                          ? 'border-t-pink-500 border-l-pink-500 border-b-white border-r-white' 
+                          : 'border-t-white border-l-white border-b-pink-500 border-r-pink-500'
+                        }`}
+                      onClick={() => isPlaying ? onStopPattern() : onPlayPattern(pattern)}
+                    >
+                      {isPlaying ? <StopCircle size={14} /> : <Play size={14} />}
+                    </button>
 
-  <button 
-    className="w-8 h-8 flex items-center justify-center
-      border-2 border-t-white border-l-white border-b-pink-500 border-r-pink-500"
-    onClick={() => onPatternLoad(pattern)}
-  >
-     {isPlaying ? <Save size={14} /> : <Edit2 size={14} />}
-  </button>
+                    <button 
+                      className="w-8 h-8 flex items-center justify-center
+                        border-2 border-t-white border-l-white border-b-pink-500 border-r-pink-500"
+                      onClick={() => onPatternLoad(pattern)}
+                    >
+                      <Edit2 size={14} />
+                    </button>
 
-  <button 
-   className="w-8 h-8 flex items-center justify-center
-   border-2 border-t-white border-l-white border-b-pink-500 border-r-pink-500"
- onClick={() => {
-   onAddToArrangement(pattern);
-   // Show feedback to user
-   const messageDiv = document.createElement('div');
-   messageDiv.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg';
-   messageDiv.textContent = `Pattern ${pattern.name} added to arrangement`;
-   document.body.appendChild(messageDiv);
-   setTimeout(() => {
-     document.body.removeChild(messageDiv);
-   }, 2000);
- }}
->
-    <ChevronRight size={14} />
-  </button>
+                    <button 
+                      className="w-8 h-8 flex items-center justify-center
+                        border-2 border-t-white border-l-white border-b-pink-500 border-r-pink-500"
+                      onClick={() => {
+                        onAddToArrangement(pattern);
+                        // Show feedback to user
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = 'fixed bottom-4 right-4 bg-gray-200 text-black px-4 py-2 border-2 border-t-pink-500 border-l-pink-500 border-b-white border-r-white';
+                        messageDiv.textContent = `Pattern ${pattern.name} added to arrangement`;
+                        document.body.appendChild(messageDiv);
+                        setTimeout(() => {
+                          document.body.removeChild(messageDiv);
+                        }, 2000);
+                      }}
+                    >
+                      <ChevronRight size={14} />
+                    </button>
 
-  <button 
-    className="w-8 h-8 flex items-center justify-center
-      border-2 border-t-white border-l-white border-b-pink-500 border-r-pink-500"
-    onClick={() => onPatternDelete(pattern.id)}
-  >
-    <Trash2 size={14} />
-  </button>
-</div>
+                    <button 
+                      className="w-8 h-8 flex items-center justify-center
+                        border-2 border-t-white border-l-white border-b-pink-500 border-r-pink-500"
+                      onClick={() => onPatternDelete(pattern.id)}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </>
               ) : (
                 <div className="h-32 flex flex-col items-center justify-center">
